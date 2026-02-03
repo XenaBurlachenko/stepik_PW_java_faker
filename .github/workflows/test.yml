@@ -1,11 +1,11 @@
-name: Run Assignment Test
+name: Test
 
 on:
   push:
     branches: [main]
 
 jobs:
-  test-assignment:
+  test:
     runs-on: ubuntu-latest
     
     steps:
@@ -18,20 +18,28 @@ jobs:
         java-version: '11'
         distribution: 'temurin'
     
-    - name: Setup Playwright
+    - name: Install Playwright dependencies
       run: |
-        curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-        sudo apt-get install -y nodejs
-        npm init -y
-        npm install @playwright/test
-        npx playwright install chromium
-        npx playwright install-deps chromium
+        sudo apt-get update
+        sudo apt-get install -y \
+          wget \
+          curl \
+          unzip
+        wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+        sudo apt-get install -y ./google-chrome-stable_current_amd64.deb
+        rm google-chrome-stable_current_amd64.deb
+        echo "Chrome installed: $(google-chrome --version)"
     
-    - name: Run Maven build
+    - name: Build and run test
       run: |
         mvn clean compile
-        mvn exec:java -Dexec.mainClass="FakerGenerTest" -q
+        mvn exec:java -Dexec.mainClass="FakerGenerTest"
     
-    - name: Check test result
-      run: |
-        echo "НЕ УПАЛ"
+    - name: Upload artifacts (if needed)
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: |
+          target/
+        retention-days: 1
