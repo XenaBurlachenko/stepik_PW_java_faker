@@ -18,8 +18,22 @@ jobs:
         java-version: '11'
         distribution: 'temurin'
     
-    - name: Run Maven test
+    - name: Install Chrome for Playwright
       run: |
+        sudo apt-get update
+        sudo apt-get install -y wget
+        wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+        sudo apt-get install -y ./google-chrome-stable_current_amd64.deb
+        rm google-chrome-stable_current_amd64.deb
+    
+    - name: Run test
+      run: |
+        echo "=== Компиляция проекта ==="
         mvn clean compile
-        java -cp "target/classes:$(find ~/.m2/repository -name '*.jar' | tr '\n' ':')" FakerGeneratorTest
         
+        echo "=== Запуск теста ==="
+        cd src/test/java
+        javac -cp "../../../target/classes:$(find ~/.m2/repository -name '*.jar' | tr '\n' ':')" FakerGenerTest.java -d ../../../target/classes
+        cd ../../../
+        
+        java -cp "target/classes:$(find ~/.m2/repository -name '*.jar' | tr '\n' ':')" FakerGenerTest
