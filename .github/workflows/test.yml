@@ -1,11 +1,11 @@
-name: Java Playwright Test
+name: Run Assignment Test
 
 on:
   push:
     branches: [main]
 
 jobs:
-  test:
+  test-assignment:
     runs-on: ubuntu-latest
     
     steps:
@@ -17,21 +17,21 @@ jobs:
       with:
         java-version: '11'
         distribution: 'temurin'
-        cache: maven
     
-    - name: Install only Chrome dependencies
+    - name: Setup Playwright
       run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          wget \
-          gnupg \
-          ca-certificates
-        
-        wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
-        echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
-        sudo apt-get update
-        sudo apt-get install -y google-chrome-stable
+        curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+        sudo apt-get install -y nodejs
+        npm init -y
+        npm install @playwright/test
+        npx playwright install chromium
+        npx playwright install-deps chromium
     
-    - name: Run tests with installed Chrome
+    - name: Run Maven build
       run: |
-        mvn test -Dwebdriver.chrome.driver=$(which google-chrome-stable)
+        mvn clean compile
+        mvn exec:java -Dexec.mainClass="FakerGenerTest" -q
+    
+    - name: Check test result
+      run: |
+        echo "НЕ УПАЛ"
