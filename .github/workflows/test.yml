@@ -12,41 +12,14 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     
-    - name: Setup Java 11
+    - name: Setup Java
       uses: actions/setup-java@v4
       with:
         java-version: '11'
         distribution: 'temurin'
     
-    - name: Install dependencies
+    - name: Run Maven test
       run: |
-        sudo apt-get update
-        sudo apt-get install -y wget
-        
-        wget -q -O chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-        sudo apt-get install -y ./chrome.deb
-        rm chrome.deb
-        
-        echo "Chrome version:"
-        google-chrome --version
-    
-    - name: Run the test
-      run: |
-        echo "=== Компиляция проекта ==="
-        javac -cp "$(find ~/.m2/repository -name '*.jar' 2>/dev/null | tr '\n' ':')" src/main/java/FakerGenerTest.java -d target/classes/ 2>&1 || echo "Compilation attempt"
-        
-        echo "=== Запуск через Maven ==="
         mvn clean compile
+        java -cp "target/classes:$(find ~/.m2/repository -name '*.jar' | tr '\n' ':')" FakerGeneratorTest
         
-        echo "=== Выполнение теста ==="
-        java -cp "target/classes:$(find ~/.m2/repository -name '*.jar' 2>/dev/null | tr '\n' ':')" FakerGenerTest
-    
-    - name: Check result
-      run: |
-        echo "=== Результат выполнения ==="
-        if [ $? -eq 0 ]; then
-          echo "НЕ УПАЛ"
-        else
-          echo "УПАЛ"
-          exit 1
-        fi
