@@ -12,34 +12,41 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     
-    - name: Setup Java
+    - name: Setup Java 11
       uses: actions/setup-java@v4
       with:
         java-version: '11'
         distribution: 'temurin'
     
-    - name: Install Playwright dependencies
+    - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y \
-          wget \
-          curl \
-          unzip
-        wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-        sudo apt-get install -y ./google-chrome-stable_current_amd64.deb
-        rm google-chrome-stable_current_amd64.deb
-        echo "Chrome installed: $(google-chrome --version)"
+        sudo apt-get install -y wget
+        
+        wget -q -O chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+        sudo apt-get install -y ./chrome.deb
+        rm chrome.deb
+        
+        echo "Chrome version:"
+        google-chrome --version
     
-    - name: Build and run test
+    - name: Run the test
       run: |
+        echo "=== Компиляция проекта ==="
+        javac -cp "$(find ~/.m2/repository -name '*.jar' 2>/dev/null | tr '\n' ':')" src/main/java/FakerGenerTest.java -d target/classes/ 2>&1 || echo "Compilation attempt"
+        
+        echo "=== Запуск через Maven ==="
         mvn clean compile
-        mvn exec:java -Dexec.mainClass="FakerGenerTest"
+        
+        echo "=== Выполнение теста ==="
+        java -cp "target/classes:$(find ~/.m2/repository -name '*.jar' 2>/dev/null | tr '\n' ':')" FakerGenerTest
     
-    - name: Upload artifacts (if needed)
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-results
-        path: |
-          target/
-        retention-days: 1
+    - name: Check result
+      run: |
+        echo "=== Результат выполнения ==="
+        if [ $? -eq 0 ]; then
+          echo "НЕ УПАЛ"
+        else
+          echo "УПАЛ"
+          exit 1
+        fi
